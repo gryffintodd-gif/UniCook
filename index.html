@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UniCook: cook with what's in your fridge</title>
+  <meta name="description" content="UniCook helps college students build affordable meals with the groceries they already have.">
+  <meta name="theme-color" content="#212721">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="UniCook">
+  <meta property="og:description" content="Build affordable meals with the groceries you have.">
+  <!-- Favicon: a strip of masking tape, the site's main design device. Inline so there is no extra file. -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23212721'/%3E%3Crect x='6' y='22' width='52' height='20' fill='%23E9DDB5' transform='rotate(-8 32 32)'/%3E%3Ccircle cx='48' cy='16' r='6' fill='%23840028'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Archivo (with a condensed width axis) for everything; Permanent Marker only for tape labels. -->
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Permanent+Marker&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <a class="logo" href="#fridge" aria-label="UniCook, go to your fridge"><span class="logo-tape">Uni</span>Cook</a>
+    <nav class="tabs" aria-label="Main">
+      <a class="tab" id="tab-fridge" href="#fridge">Fridge</a>
+      <a class="tab" id="tab-cook" href="#cook">Cook</a>
+      <a class="tab" id="tab-list" href="#list">List</a>
+      <a class="tab" id="tab-feed" href="#feed">Feed</a>
+      <a class="tab" id="tab-import" href="#import">Import</a>
+      <a class="tab" id="tab-me" href="#me">Me</a>
+    </nav>
+    <a class="who" id="who" href="#me">Sign in</a>
+  </header>
+
+  <main id="main">
+    <!-- FRIDGE: type or photo-pick ingredients; recipes reshuffle live beside the shelves. -->
+    <section class="view" id="view-fridge" aria-labelledby="h-fridge">
+      <div class="field field--maroon">
+        <div class="wrap">
+          <h1 id="h-fridge">What's in your fridge?</h1>
+          <p class="lede">Build affordable meals with the groceries you have.</p>
+        </div>
+      </div>
+      <div class="wrap fridge-grid">
+        <div class="fridge-left">
+          <form class="add" id="add-form" novalidate>
+            <div class="add-row">
+              <div class="input-group grow">
+                <label for="add-name">Add an ingredient</label>
+                <input id="add-name" name="name" type="text" list="ing-list" autocomplete="off" maxlength="40" placeholder="eggs, rice, that half onion">
+                <datalist id="ing-list"></datalist>
+              </div>
+              <div class="input-group">
+                <label for="add-cat">Shelf</label>
+                <select id="add-cat" name="cat"></select>
+              </div>
+              <button class="btn" type="submit">Add</button>
+            </div>
+            <p class="form-error" id="add-error" role="alert"></p>
+          </form>
+
+          <div class="photo-row">
+            <button class="btn btn--ghost" type="button" id="photo-btn">From a photo</button>
+            <input type="file" id="photo-input" accept="image/*" capture="environment" hidden>
+            <button class="btn btn--ghost" type="button" id="sample-btn">Sample fridge</button>
+          </div>
+
+          <!-- Photo panel: shows the picture and lets you tap what you see. It does NOT detect food. -->
+          <div class="photo-panel" id="photo-panel" hidden>
+            <div class="photo-frame"><img id="photo-preview" alt="Your fridge photo" width="400" height="300"></div>
+            <div class="photo-side">
+              <p class="demo-note"><strong>Demo:</strong> UniCook can't read photos yet. Tap what you see in yours and it goes on the shelf.</p>
+              <div class="chips" id="photo-chips"></div>
+              <button class="btn" type="button" id="photo-done">Done</button>
+            </div>
+          </div>
+
+          <div class="quick">
+            <p class="quick-label" id="quick-label">Tap to add</p>
+            <div class="chips" id="quick-chips" aria-labelledby="quick-label"></div>
+          </div>
+
+          <div id="shelves" class="fridge" aria-live="polite"></div>
+        </div>
+
+        <aside class="fridge-right" aria-labelledby="h-stack">
+          <div class="stack-head">
+            <h2 id="h-stack">You can make</h2>
+            <p class="stack-count" id="stack-count"></p>
+          </div>
+          <ol class="receipts" id="stack"></ol>
+          <a class="btn btn--ghost btn--full" href="#cook">See every recipe</a>
+        </aside>
+      </div>
+      <!-- Phones only: floating count of READY recipes, so the reshuffle is visible without scrolling. -->
+      <button type="button" class="ready-badge" id="ready-badge" hidden></button>
+    </section>
+
+    <!-- COOK: every recipe, filtered by difficulty, time and your appliances. -->
+    <section class="view" id="view-cook" aria-labelledby="h-cook" hidden>
+      <div class="field field--yolk">
+        <div class="wrap">
+          <h1 id="h-cook">What can I make?</h1>
+          <p class="lede">Sorted by how little you're missing.</p>
+        </div>
+      </div>
+      <div class="wrap">
+        <!-- Level, time and ingredient filters. Shared with the Feed, so a beginner sets them once. -->
+        <div class="filter-bar filter-bar--top" id="cook-filters"></div>
+        <div class="filter-status">
+          <p class="filter-count" id="cook-count" aria-live="polite"></p>
+          <button class="btn btn--ghost btn--small" type="button" id="cook-clear" data-clearfilters hidden>Clear filters</button>
+          <button class="btn" type="button" id="surprise">Surprise me</button>
+        </div>
+        <p class="note" id="cook-note"></p>
+        <ol class="receipts receipts--grid" id="cook-list"></ol>
+      </div>
+    </section>
+
+    <!-- LIST: pick a few meals, get one combined grocery list of what's missing. -->
+    <section class="view" id="view-list" aria-labelledby="h-list" hidden>
+      <div class="field field--tape">
+        <div class="wrap">
+          <h1 id="h-list">Your grocery list</h1>
+          <p class="lede">Choose a few meals you want to cook. Here's everything you still need to buy.</p>
+        </div>
+      </div>
+      <div class="wrap list-grid">
+        <div>
+          <h2 class="h2">Meals on the list</h2>
+          <ul class="list-meals" id="list-meals"></ul>
+          <div class="input-group list-add">
+            <label for="list-pick">Add a meal</label>
+            <div class="add-row">
+              <select id="list-pick" class="grow"></select>
+              <button class="btn" type="button" id="list-add">Add meal</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h2 class="h2">To buy</h2>
+          <div id="list-items"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEED: demo posts from other students, filterable by school and by your fridge. -->
+    <section class="view" id="view-feed" aria-labelledby="h-feed" hidden>
+      <div class="field field--maroon">
+        <div class="wrap">
+          <h1 id="h-feed">Fresh from other dorms</h1>
+          <p class="lede">What other students cooked. These are demo posts.</p>
+        </div>
+      </div>
+      <div class="wrap">
+        <div class="filters">
+          <div class="input-group">
+            <label for="feed-school">School</label>
+            <select id="feed-school"></select>
+          </div>
+          <label class="toggle"><input type="checkbox" id="feed-canmake"> <span>Only what my fridge can almost make</span></label>
+          <button class="btn" type="button" id="post-open">Post a dish</button>
+        </div>
+        <div class="filter-bar" id="feed-filters"></div>
+        <div class="filter-status">
+          <p class="filter-count" id="feed-count" aria-live="polite"></p>
+          <button class="btn btn--ghost btn--small" type="button" id="feed-clear" data-clearfilters hidden>Clear filters</button>
+        </div>
+        <!-- Your own post: saved on this device only (no server yet), shown at the top of the feed. -->
+        <form class="post-form" id="post-form" novalidate hidden>
+          <h2 class="h2">Post a dish</h2>
+          <div id="post-form-body"></div>
+        </form>
+        <div class="posts" id="posts"></div>
+      </div>
+    </section>
+
+    <!-- IMPORT: paste a TikTok or Reels link. The recipe shown is a labeled demo. -->
+    <section class="view" id="view-import" aria-labelledby="h-import" hidden>
+      <div class="field field--yolk">
+        <div class="wrap">
+          <h1 id="h-import">Paste a video, get steps</h1>
+          <p class="lede">Works with TikTok and Instagram Reels links.</p>
+        </div>
+      </div>
+      <div class="wrap import-wrap">
+        <form class="add" id="import-form" novalidate>
+          <div class="add-row">
+            <div class="input-group grow">
+              <label for="import-url">Video link</label>
+              <input id="import-url" type="url" inputmode="url" autocomplete="off" placeholder="https://www.tiktok.com/@someone/video/…">
+            </div>
+            <button class="btn" type="submit">Import recipe</button>
+          </div>
+          <p class="form-error" id="import-error" role="alert"></p>
+        </form>
+        <div id="import-result" aria-live="polite"></div>
+        <h2 class="h2">Your imports</h2>
+        <ul class="imports" id="imports"></ul>
+      </div>
+    </section>
+
+    <!-- ME: demo profile (no password, saved on this device): school + appliances. -->
+    <section class="view" id="view-me" aria-labelledby="h-me" hidden>
+      <div class="field field--maroon">
+        <div class="wrap">
+          <h1 id="h-me">Your kitchen card</h1>
+          <p class="lede">Your school and your appliances, so every recipe fits your kitchen.</p>
+        </div>
+      </div>
+      <div class="wrap" id="me-body"></div>
+      <!-- Spice rack: works with or without a kitchen card, like the fridge. -->
+      <div class="wrap" id="rack-body"></div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap">
+      <p><strong>Demo data:</strong> feed posts, user handles, like counts and imported recipes are made up. Everything you add stays on this device.</p>
+      <p>UniCook, a RESECON 490AI website lab project.</p>
+    </div>
+  </footer>
+
+  <!-- One recipe, opened from anywhere. The whole process is visible at once. -->
+  <dialog id="recipe-dialog" aria-labelledby="dlg-title">
+    <div class="dlg" id="dlg-body"></div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="./data.js"></script>
+  <script src="./store.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
